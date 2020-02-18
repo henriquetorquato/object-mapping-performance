@@ -13,6 +13,7 @@ namespace ObjectMappingPerformance
 
         private static List<IObjectMapper> _mappers = new List<IObjectMapper>
         {
+            new AttributionMapping(),
             new ReflectionMapping(),
             new SerializationMapping(),
             new ExpressionTreeMapping(),
@@ -48,13 +49,21 @@ namespace ObjectMappingPerformance
             Console.WriteLine();
         }
 
+        private static void AddHeaderSplit()
+            => AddRow(
+                Enumerable.Repeat(
+                    String.Join(string.Empty, Enumerable.Repeat("-", COLUMN_SIZE)),
+                _iterations.Count + 1)
+            );
+
         static void CreateTableFor<T>() where T : IMappingObject
         {
             var type = typeof(T);
             Console.WriteLine($"Mapping performance for {type.Name}\n\t");
 
             _iterations.Sort();
-            AddRow(_iterations.Select(i => i.ToString()).Prepend(string.Empty));
+            AddRow(_iterations.Select(i => i.ToString()).Prepend("Iterations"));
+            AddHeaderSplit();
 
             foreach (var mapper in _mappers)
             {

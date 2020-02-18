@@ -76,15 +76,10 @@ namespace ObjectMappingPerformance.Mappings
             return (Func<IDictionary<string, string>, T>)mapper;
         }
 
-        public T Map<T>(IDictionary<string, string> dictionary) where T : IMappingObject
+        public IMappingObject Map<T>(IDictionary<string, string> dictionary) where T : IMappingObject
         {
             var mapper = GetMapper<T>();
             return mapper(dictionary);
-        }
-
-        public object Map(Type destinationType, IDictionary<string, string> dictionary)
-        {
-            throw new NotImplementedException();
         }
     }
 }

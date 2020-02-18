@@ -16,7 +16,7 @@ namespace ObjectMappingPerformance.Mappings
                 .CreateMapper();
         }
 
-        public T Map<T>(IDictionary<string, string> dictionary) where T : IMappingObject
+        public IMappingObject Map<T>(IDictionary<string, string> dictionary) where T : IMappingObject
             => _mapper.Map<IDictionary<string, object>, T>(dictionary as IDictionary<string, object>);
     }
 }

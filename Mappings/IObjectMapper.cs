@@ -7,6 +7,6 @@ namespace ObjectMappingPerformance.Mappings
     {
         string Name { get; }
 
-        T Map<T>(IDictionary<string, string> dictionary) where T : IMappingObject;
+        IMappingObject Map<T>(IDictionary<string, string> dictionary) where T : IMappingObject;
     }
 }

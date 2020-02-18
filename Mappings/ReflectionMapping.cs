@@ -8,7 +8,7 @@ namespace ObjectMappingPerformance.Mappings
     {
         public string Name => "Reflection";
 
-        public T Map<T>(IDictionary<string, string> dictionary) where T : IMappingObject
+        public IMappingObject Map<T>(IDictionary<string, string> dictionary) where T : IMappingObject
         {
             var type = typeof(T);
             var instance = (T)Activator.CreateInstance(type);
