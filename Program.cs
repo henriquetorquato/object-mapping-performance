@@ -3,39 +3,77 @@ using ObjectMappingPerformance.Objects;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 
 namespace ObjectMappingPerformance
 {
     class Program
     {
-        private const int Iterations = 100000;
+        private const int COLUMN_SIZE = 15;
+
+        private static List<IObjectMapper> _mappers = new List<IObjectMapper>
+        {
+            new ReflectionMapping(),
+            new SerializationMapping(),
+            new ExpressionTreeMapping(),
+            new AutoMapperMapping()
+        };
+
+        private static List<int> _iterations = new List<int>
+        {
+            10000,
+            30000,
+            50000,
+            70000,
+            90000
+        };
 
         static void Main(string[] args)
         {
-            var mappers = new List<IObjectMapper>()
-            {
-                new ReflectionMapping(),
-                new SerializationMapping(),
-                new ExpressionTreeMapping()
-            };
-
-            foreach (var mapper in mappers)
-            {
-                Console.WriteLine($"Mapping performance for {mapper.Name} on {Iterations} iterations:");
-
-                GenerateMetricsFor<SimpleStringObject>(mapper);
-                GenerateMetricsFor<ValueConversionObject>(mapper);
-
-                Console.WriteLine();
-            }
+            CreateTableFor<SimpleStringObject>();
+            CreateTableFor<ValueConversionObject>();
         }
 
-        static void GenerateMetricsFor<T>(IObjectMapper objectMapping) where T : IMappingObject
+        private static void AddColumn(string content)
+            => Console.Write(content.PadRight(COLUMN_SIZE));
+
+        private static void AddRow(IEnumerable<string> columns)
+        {
+            Console.Write("\t|");
+            foreach (var column in columns)
+            {
+                AddColumn(column);
+                Console.Write("|");
+            }
+            Console.WriteLine();
+        }
+
+        static void CreateTableFor<T>() where T : IMappingObject
+        {
+            var type = typeof(T);
+            Console.WriteLine($"Mapping performance for {type.Name}\n\t");
+
+            _iterations.Sort();
+            AddRow(_iterations.Select(i => i.ToString()).Prepend(string.Empty));
+
+            foreach (var mapper in _mappers)
+            {
+                var mapperTimes = new List<TimeSpan>();
+                foreach (var iteration in _iterations)
+                {
+                    mapperTimes.Add(GetIterationTimeFor<T>(mapper, iteration));
+                }
+
+                AddRow(mapperTimes.Select(t => $"{t.Milliseconds}ms").Prepend(mapper.Name));
+            }
+
+            Console.WriteLine();
+        }
+
+        static TimeSpan GetIterationTimeFor<T>(IObjectMapper objectMapping, int iterations) where T : IMappingObject
         {
             var instance = (T)Activator.CreateInstance(typeof(T));
-            var time = GetMappingTime<T>(objectMapping, Iterations, instance.Dictionary);
-
-            Console.WriteLine($"\t{instance.Name} took {time.TotalMilliseconds}ms");
+            return GetMappingTime<T>(objectMapping, iterations, instance.Dictionary);
         }
 
         static TimeSpan GetMappingTime<T>(IObjectMapper objectMapping, int iterations, IDictionary<string, string> dictionary) where T : IMappingObject

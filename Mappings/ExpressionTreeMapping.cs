@@ -9,7 +9,7 @@ namespace ObjectMappingPerformance.Mappings
 {
     public class ExpressionTreeMapping : IObjectMapper
     {
-        public string Name => nameof(ExpressionTreeMapping);
+        public string Name => "ExpressionTree";
 
         private static ConcurrentDictionary<Type, Delegate> _mapperCache = new ConcurrentDictionary<Type, Delegate>();
 
@@ -29,7 +29,7 @@ namespace ObjectMappingPerformance.Mappings
             var instance = Expression.Variable(targetType, "instance");
             var configurations = Expression.Parameter(configurationsType, "configurations");
 
-            var configurationsKey = configurationsType.GetProperty("Item", new[] { typeof(string) });
+            var configurationsItem = configurationsType.GetProperty("Item", new[] { typeof(string) });
             var changeType = typeof(Convert).GetMethod("ChangeType", new[] { typeof(string), typeof(Type) });
 
             statements.Add(Expression.Assign(instance, Expression.New(targetType)));
@@ -41,20 +41,26 @@ namespace ObjectMappingPerformance.Mappings
                     continue;
                 }
 
-                var getRawValue = Expression.MakeIndex(configurations, configurationsKey, new[] {
-                    Expression.Constant(property.Name)
-                });
-                
-                var assignValue = Expression.Assign(
-                    Expression.Property(instance, property),
-                    Expression.Convert(
-                        Expression.Call(changeType, getRawValue, Expression.Constant(property.PropertyType)), property.PropertyType)
+                var getRawValue = Expression.MakeIndex(configurations, configurationsItem,
+                    new[] { Expression.Constant(property.Name) });
+
+                var convertValue = Expression.Convert(
+                        Expression.Call(changeType, getRawValue, Expression.Constant(property.PropertyType)), property.PropertyType);
+
+                var assignValue = Expression.Assign(Expression.Property(instance, property), convertValue);
+
+                var tryAssignValue = Expression.TryCatch(
+                    Expression.Block(
+                        assignValue,
+                        Expression.Empty()
+                    ),
+                    Expression.Catch(
+                        typeof(Exception),
+                        Expression.Empty()
+                    )
                 );
 
-                var assignCondition = Expression.IfThen(
-                    Expression.Constant(getRawValue != default), assignValue);
-
-                statements.Add(Expression.TryFinally(assignCondition, Expression.Empty()));
+                statements.Add(tryAssignValue);
             }
 
             statements.Add(instance);
@@ -74,6 +80,11 @@ namespace ObjectMappingPerformance.Mappings
         {
             var mapper = GetMapper<T>();
             return mapper(dictionary);
+        }
+
+        public object Map(Type destinationType, IDictionary<string, string> dictionary)
+        {
+            throw new NotImplementedException();
         }
     }
 }

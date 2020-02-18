@@ -6,7 +6,7 @@ namespace ObjectMappingPerformance.Mappings
 {
     class ReflectionMapping : IObjectMapper
     {
-        public string Name => nameof(ReflectionMapping);
+        public string Name => "Reflection";
 
         public T Map<T>(IDictionary<string, string> dictionary) where T : IMappingObject
         {
